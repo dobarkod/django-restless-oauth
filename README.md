@@ -1,10 +1,56 @@
 # Django Restless OAuth
 
-![Build Status](https://secure.travis-ci.org/dobarkod/django-restless-oauth.png?branch=master)](http://travis-ci.org/dobarkod/django-restless-oauth)
+[![Build Status](https://secure.travis-ci.org/dobarkod/django-restless-oauth.png)](http://travis-ci.org/dobarkod/django-restless-oauth)
 
 Django Restless OAuth is an add-on for
 [Django Restless](http://github.com/dobarkod/django-restless) for creating
-OAuth 1 providers.
+OAuth 1 providers. It uses the low level [oauthlib](https://github.com/idan/oauthlib)
+library.
+
+Consider it alpha-quality software. *DO NOT* use in production (esp. see the
+security issue described below).
+
+## Installation
+
+Install via Github:
+
+    pip install https://github.com/dobarkod/django-restless-oauth/archive/master.zip
+
+## Quickstart
+
+* Make sure you use the Sites framework and that your site URL is correctly set
+(needed for OAuth URL verification)
+* Make sure you use HTTPS (oauthlib will complain otherwise, and be right about
+it)
+* Restless OAuth provides resources for 3-legged OAuth authorization in
+`django_restless.urls`. In your project's `urls.py` add:
+
+    import restless_oauth.urls
+
+    urlpatterns += ('',
+        url(r'^oauth/', include(restless_oauth.urls))
+    )
+
+* In views that should use OAuth authorization, use `OAuthMixin`:
+
+    from restless_oauth.views import OAuthMixin
+
+    class ProtectedEndpoint(Endpoint, OAuthMixin):
+
+        @login_required
+        def get(self, request):
+            return { 'username': request.user.username }
+
+* OAuthMixin will attempt to authenticate the request and assign request.user
+as appropriate; you can use DjangoRestless' `login_required` to make sure
+it's set
+
+**WARNING**: `/oauth/authorize` (2nd step in 3-legged OAuth authentication
+flow) as implemented by `restless_oauth.views.Authorize` will auto-authorize
+any request if the user is logged in. *You MUST override this* and ask the
+user whether they authorize the app.
+
+## Documentation
 
 There's not much documentation yet, please see the tests for examples.
 
