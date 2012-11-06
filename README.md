@@ -14,7 +14,7 @@ security issue described below).
 
 Install via Github:
 
-    pip install https://github.com/dobarkod/django-restless-oauth/archive/master.zip
+        pip install https://github.com/dobarkod/django-restless-oauth/archive/master.zip
 
 ## Quickstart
 
@@ -25,21 +25,21 @@ it)
 * Restless OAuth provides resources for 3-legged OAuth authorization in
 `django_restless.urls`. In your project's `urls.py` add:
 
-    import restless_oauth.urls
+        import restless_oauth.urls
 
-    urlpatterns += ('',
-        url(r'^oauth/', include(restless_oauth.urls))
-    )
+        urlpatterns += ('',
+            url(r'^oauth/', include(restless_oauth.urls))
+        )
 
 * In views that should use OAuth authorization, use `OAuthMixin`:
 
-    from restless_oauth.views import OAuthMixin
+        from restless_oauth.views import OAuthMixin
 
-    class ProtectedEndpoint(Endpoint, OAuthMixin):
+        class ProtectedEndpoint(Endpoint, OAuthMixin):
 
-        @login_required
-        def get(self, request):
-            return { 'username': request.user.username }
+            @login_required
+            def get(self, request):
+                return { 'username': request.user.username }
 
 * OAuthMixin will attempt to authenticate the request and assign request.user
 as appropriate; you can use DjangoRestless' `login_required` to make sure
