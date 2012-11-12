@@ -121,8 +121,6 @@ class OAuthViewTest(TestCase):
 
         self.client_key = u'CLIENTKEYCLIENTKEYCLIENTKEY'
         self.client_secret = u'CLIENTSECRETCLIENTSECRET'
-        self.user_key = u'USERKEYUSERKEYUSERKEY'
-        self.user_secret = u'USERSECRETUSERSECRET'
 
         self.user = User.objects.create_user(username='foo', password='bar')
         self.client = OAuthClient.objects.create(key=self.client_key,
