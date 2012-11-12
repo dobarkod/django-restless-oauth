@@ -10,6 +10,14 @@ class Server(oauthlib.oauth1.Server):
         pass
 
     @property
+    def enforce_ssl(self):
+        return False
+
+    @property
+    def nonce_length(self):
+        return 5, 30
+
+    @property
     def dummy_client_key(self):
         return u'-'
 
