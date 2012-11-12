@@ -59,11 +59,13 @@ class OAuthTestClient(django.test.client.Client):
         finally:
             return response
 
-    def inject_oauth_headers(self, headers):
+    def inject_oauth_headers(self, headers, method):
         if self.oauth_client and self.oauth_uri:
-            uri, oauth_headers, body = self.oauth_client.sign(self.oauth_uri)
+            uri, oauth_headers, body = self.oauth_client.sign(self.oauth_uri,
+                http_method=unicode(method))
             headers = dict(headers)
-            headers.update(oauth_headers)
+            for k, v in oauth_headers.items():
+                headers['HTTP_' + k.upper()] = v
         return headers
 
     def get(self, url_name, data={}, follow=False, extra={}, *args, **kwargs):
@@ -72,7 +74,7 @@ class OAuthTestClient(django.test.client.Client):
                 reverse(url_name, args=args, kwargs=kwargs),
                 data=data,
                 follow=follow,
-                **self.inject_oauth_headers(extra)))
+                **self.inject_oauth_headers(extra, 'GET')))
 
     def post(self, url_name, data={}, follow=False, extra={}, *args, **kwargs):
         return self.process(
@@ -80,14 +82,14 @@ class OAuthTestClient(django.test.client.Client):
                 reverse(url_name, args=args, kwargs=kwargs),
                 data=data,
                 follow=follow,
-                **self.inject_oauth_headers(extra)))
+                **self.inject_oauth_headers(extra, 'POST')))
 
     def put(self, url_name, data={}, follow=False, extra={}, *args, **kwargs):
         return self.process(
             super(OAuthTestClient, self).put(
                 reverse(url_name, args=args, kwargs=kwargs),
                 data=data, follow=follow,
-                **self.inject_oauth_headers(extra)))
+                **self.inject_oauth_headers(extra, 'PUT')))
 
     def delete(self, url_name, data={}, follow=False, extra={}, *args,
         **kwargs):
@@ -96,7 +98,7 @@ class OAuthTestClient(django.test.client.Client):
             super(OAuthTestClient, self).delete(
                 reverse(url_name, args=args, kwargs=kwargs),
                 content_type=content_type, data=data, follow=follow,
-                **self.inject_oauth_headers(extra)))
+                **self.inject_oauth_headers(extra, 'DELETE')))
 
 
 class OAuthViewTest(TestCase):
