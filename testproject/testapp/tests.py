@@ -1,6 +1,6 @@
 import json
 
-from django.test import TestCase
+from django.test import TestCase, LiveServerTestCase
 import django.test.client
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -9,6 +9,10 @@ from django.contrib.sites.models import Site
 import oauthlib.oauth1.rfc5849
 
 from restless_oauth.models import *
+
+import requests
+from oauth_hook import OAuthHook
+import urlparse
 
 
 class OAuthTestClient(django.test.client.Client):
@@ -246,8 +250,110 @@ class OAuthViewTest(TestCase):
         tc = OAuthTestClient()
         tc.set_client_key(self.client_key, self.client_secret)
         tc.set_access_token(token.token, token.secret)
-        tc.set_uri('https://localhost/secret/')
+        tc.set_uri('http://localhost/secret/')
 
         r = tc.get('protected_endpoint')
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.json['success'])
+
+
+class RequestsInteropTest(LiveServerTestCase):
+
+    def clean(self):
+        User.objects.all().delete()
+        OAuthClient.objects.all().delete()
+        OAuthRequestToken.objects.all().delete()
+        OAuthAccessToken.objects.all().delete()
+        OAuthVerifier.objects.all().delete()
+        OAuthNonce.objects.all().delete()
+
+    def setUp(self):
+        self.clean()
+
+        s = Site.objects.get(id=1)
+        s.domain = urlparse.urlparse(self.live_server_url).netloc
+        s.save()
+        Site.objects.clear_cache()
+
+        self.client_key = u'CLIENTKEYCLIENTKEYCLIENTKEY'
+        self.client_secret = u'CLIENTSECRETCLIENTSECRET'
+
+        self.user = User.objects.create_user(username='foo', password='bar')
+        self.client = OAuthClient.objects.create(key=self.client_key,
+            secret=self.client_secret)
+
+        self.testclient = OAuthTestClient()
+
+    def url_for(self, url_name, *args, **kwargs):
+        return '%s%s' % (self.live_server_url,
+            reverse(url_name, args=args, kwargs=kwargs))
+
+    def tearDown(self):
+        self.clean()
+
+    def test_get_request_token_params_in_query(self):
+        hook = OAuthHook(consumer_key=self.client_key,
+            consumer_secret=self.client_secret)
+
+        r = requests.post(self.url_for('oauth_get_request_token'),
+            hooks={'pre_request': hook})
+
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(OAuthRequestToken.objects.filter(
+            token=r.json['oauth_token'],
+            secret=r.json['oauth_token_secret']).exists())
+
+    def test_get_request_token_params_in_headers(self):
+        hook = OAuthHook(consumer_key=self.client_key,
+            consumer_secret=self.client_secret, header_auth=True)
+
+        r = requests.post(self.url_for('oauth_get_request_token'),
+            hooks={'pre_request': hook})
+
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(OAuthRequestToken.objects.filter(
+            token=r.json['oauth_token'],
+            secret=r.json['oauth_token_secret']).exists())
+
+    def test_get_request_token_params_in_body(self):
+        hook = OAuthHook(consumer_key=self.client_key,
+            consumer_secret=self.client_secret)
+
+        r = requests.post(self.url_for('oauth_get_request_token'),
+            hooks={'pre_request': hook}, data='foo=bar', headers={
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }, config={'max_retries': 0})
+
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(OAuthRequestToken.objects.filter(
+            token=r.json['oauth_token'],
+            secret=r.json['oauth_token_secret']).exists())
+
+    def test_get_access_token_succeeds(self):
+        request_token = OAuthRequestToken.generate(self.client)
+        verifier = OAuthVerifier.generate(self.user, request_token)
+
+        hook = OAuthHook(request_token.token, request_token.secret,
+            self.client_key, self.client_secret, header_auth=True)
+
+        r = requests.post(self.url_for('oauth_get_access_token'),
+            hooks={'pre_request': hook}, data={
+                'oauth_verifier': verifier.verifier,
+            }, config={'max_retries': 0})
+
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(OAuthAccessToken.objects.filter(
+            token=r.json['oauth_token'],
+            secret=r.json['oauth_token_secret']).exists())
+
+    def test_access_protected_resource_succeeds(self):
+        token = OAuthAccessToken.generate(self.user, self.client)
+
+        hook = OAuthHook(token.token, token.secret,
+            self.client_key, self.client_secret, header_auth=True)
+
+        r = requests.get(self.url_for('protected_endpoint'),
+            hooks={'pre_request': hook}, config={'max_retries': 0})
+
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.json['success'])
