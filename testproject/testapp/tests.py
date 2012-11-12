@@ -179,14 +179,14 @@ class OAuthViewTest(TestCase):
     def test_returns_unauthorized_if_request_replay_attempted(self):
         tc = OAuthTestClient()
         tc.set_client_key(self.client_key, self.client_secret)
-        tc.set_uri('https://localhost/oauth/request_token')
+        tc.set_uri('http://localhost/oauth/request_token')
 
         r = tc.post('oauth_get_request_token')
         self.assertEqual(r.status_code, 200)
 
         tc2 = OAuthTestClient()
         r2 = tc2.post('oauth_get_request_token',
-            extra={'Authorization': r.request['Authorization']})
+            extra={'HTTP_AUTHORIZATION': r.request['HTTP_AUTHORIZATION']})
         self.assertEqual(r2.status_code, 401)
 
     def test_get_access_token_succeeds(self):
