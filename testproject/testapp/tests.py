@@ -142,7 +142,7 @@ class OAuthViewTest(TestCase):
     def test_returns_bad_req_if_invalid_client_key(self):
         tc = OAuthTestClient()
         tc.set_client_key('foo', 'bar')
-        tc.set_uri('https://localhost/oauth/request_token')
+        tc.set_uri('http://localhost/oauth/request_token')
 
         r = tc.post('oauth_get_request_token')
         self.assertEqual(r.status_code, 400)
@@ -152,7 +152,7 @@ class OAuthViewTest(TestCase):
         tc = OAuthTestClient()
         tc.set_client_key(u'CLIENTKEYDOESNTEXIST',
             u'CLIENTSECRETDOESNTEXIST')
-        tc.set_uri('https://localhost/oauth/request_token')
+        tc.set_uri('http://localhost/oauth/request_token')
 
         r = tc.post('oauth_get_request_token')
         self.assertEqual(r.status_code, 400)
@@ -161,7 +161,7 @@ class OAuthViewTest(TestCase):
     def test_returns_unauthorized_on_uri_mismatch(self):
         tc = OAuthTestClient()
         tc.set_client_key(self.client_key, self.client_secret)
-        tc.set_uri('https://localhost/incorrect/uri')
+        tc.set_uri('http://localhost/incorrect/uri')
 
         r = tc.post('oauth_get_request_token')
         self.assertEqual(r.status_code, 401)
@@ -169,7 +169,7 @@ class OAuthViewTest(TestCase):
     def test_get_request_token_succeeds(self):
         tc = OAuthTestClient()
         tc.set_client_key(self.client_key, self.client_secret)
-        tc.set_uri('https://localhost/oauth/request_token')
+        tc.set_uri('http://localhost/oauth/request_token')
 
         r = tc.post('oauth_get_request_token')
         self.assertEqual(r.status_code, 200)
@@ -199,7 +199,7 @@ class OAuthViewTest(TestCase):
         tc.set_client_key(self.client_key, self.client_secret)
         tc.set_access_token(request_token.token, request_token.secret)
         tc.set_verifier(verifier.verifier)
-        tc.set_uri('https://localhost/oauth/access_token')
+        tc.set_uri('http://localhost/oauth/access_token')
 
         r = tc.post('oauth_get_access_token')
         self.assertEqual(r.status_code, 200)
@@ -215,7 +215,7 @@ class OAuthViewTest(TestCase):
         tc.set_client_key(self.client_key, self.client_secret)
         tc.set_access_token(request_token.token, request_token.secret)
         tc.set_verifier(u'INVALIDVERIFIERKEY')
-        tc.set_uri('https://localhost/oauth/access_token')
+        tc.set_uri('http://localhost/oauth/access_token')
 
         r = tc.post('oauth_get_access_token')
         self.assertEqual(r.status_code, 400)
@@ -229,7 +229,7 @@ class OAuthViewTest(TestCase):
         tc.set_client_key(self.client_key, self.client_secret)
         tc.set_access_token(u'INVALIDREQUESTTOKEN', u'INVALIDREQUESTSECRET')
         tc.set_verifier(verifier.verifier)
-        tc.set_uri('https://localhost/oauth/access_token')
+        tc.set_uri('http://localhost/oauth/access_token')
 
         r = tc.post('oauth_get_access_token')
         self.assertEqual(r.status_code, 400)
@@ -237,7 +237,7 @@ class OAuthViewTest(TestCase):
 
     def test_access_protected_resource_fails_without_oauth(self):
         tc = OAuthTestClient()
-        tc.set_uri('https://localhost/secret/')
+        tc.set_uri('http://localhost/secret/')
 
         r = tc.get('protected_endpoint')
         self.assertEqual(r.status_code, 403)
