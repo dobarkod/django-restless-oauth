@@ -1,10 +1,13 @@
-import oauthlib.oauth1.rfc5849
+import oauthlib.oauth1
 
 from .models import OAuthNonce, OAuthClient, OAuthRequestToken, \
     OAuthAccessToken, OAuthVerifier
 
 
-class Server(oauthlib.oauth1.rfc5849.Server):
+class Server(oauthlib.oauth1.Server):
+
+    class Unauthorized(Exception):
+        pass
 
     @property
     def dummy_client_key(self):
