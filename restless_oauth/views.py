@@ -6,8 +6,6 @@ from .auth import Server
 from restless.views import Endpoint
 from restless.http import JSONErrorResponse, Http400
 
-from oauthlib.common import Request as OAuthRequest
-
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.sites.models import Site
@@ -35,16 +33,6 @@ class OAuthMixin(object):
 
         return headers
 
-    @classmethod
-    def get_oauth_params(cls, request):
-        s = Server()
-        r = OAuthRequest(u'?' + unicode(request.META.get('QUERY_STRING', '')),
-            http_method=request.method,
-            headers=cls._get_http_headers(request),
-            body=request.raw_data)
-        sigtype, params, oauth_params = s.get_signature_type_and_params(r)
-        return dict(oauth_params)
-
     def verify_oauth_request(self, request, **kwargs):
 
         def get_absolute_url():
@@ -61,10 +49,16 @@ class OAuthMixin(object):
             headers=self._get_http_headers(request),
             **kwargs)
 
+        if isinstance(authorized, tuple):
+            authorized, oauth_request = authorized
+        else:
+            oauth_request = None
+
         if not authorized:
             raise Server.Unauthorized()
 
-        params = self.get_oauth_params(request)
+        _, _, params = server.get_signature_type_and_params(oauth_request)
+        params = dict(params)
         OAuthNonce.generate(params['oauth_consumer_key'],
             params['oauth_timestamp'], params['oauth_nonce'])
 
