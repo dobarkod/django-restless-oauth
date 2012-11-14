@@ -77,6 +77,7 @@ class OAuthMixin(object):
             require_resource_owner=True)
 
     def authenticate(self, request):
+        request.oauth_client = None
 
         try:
             params = self.authorize_resource(request)
@@ -86,6 +87,7 @@ class OAuthMixin(object):
         try:
             t = OAuthAccessToken.objects.get(token=params.get('oauth_token'))
             request.user = t.user
+            request.oauth_client = t.client 
         except OAuthAccessToken.DoesNotExist:
             return
 
